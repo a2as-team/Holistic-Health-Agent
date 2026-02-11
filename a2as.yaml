@@ -1,0 +1,605 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: helialiaia01/holistic-health-agent
+    source: https://github.com/helialiaia01/holistic-health-agent
+    branch: main
+    commit: "5765a1f2"
+    scope: [chat_with_agent_v2.py, src/agents/diagnostic_agent.py, src/agents/intake_agent.py, src/agents/knowledge_agent.py,
+      src/agents/recommender_agent.py, src/agents/root_cause_agent.py, src/agents/specialty_router_agent.py, src/config.py,
+      src/evaluation.py, src/knowledge/context_engineering.py, src/knowledge/medical_knowledge_base.py, src/orchestrator.py,
+      src/prompts/dr_berg_style.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:55:51Z'
+    url: https://a2as.org/certified/agents/helialiaia01/holistic-health-agent
+  signatures:
+    digest: sha256:jmFnfKE7D94FmQ8hB2I_kKWbaSuzEm9xEPasd3SZd0Y
+    key: ed25519:T6zwkjLnqyEU4AhpW1Oq5DEUpBLZhLlEbojw8Qq5Luo
+    sig: ed25519:QschbiTe7wIvqnER6wtFp1CvJyBKUpnhi-z7XMLEFfUE8iT2JCeDZDnQeEOIcRMpcBWq-MDLbqjMlV6U02owDg
+
+agents:
+  agent.0:
+    type: instance
+    models: [gemini-2.0-flash-lite]
+    params:
+      instruction: ['{...}', '{...}']
+      config: GenerateContentConfig(temperature=0.3, top_p=0.8, top_k=40, max_output_tokens=2500, safety_settings=safety_settings)
+      function: recommender_agent
+      instance: agent
+  agent.1:
+    type: instance
+    models: [gemini-2.5-flash-lite]
+    tools: [specialty_tool]
+    params:
+      name: specialty_router
+      description: Medical specialty routing agent. Recommends which type of doctor to consult based on symptoms.
+      instruction: [You are a medical specialty routing expert. Your job is to help patients understand, which type of doctor
+          they should see for their symptoms., 'THE PROBLEM YOU''RE SOLVING:', 'Many people struggle with: "I have these symptoms
+          - which doctor do I see?"', '- Ask 5 people with fatigue where to go: you''ll get 5 different answers', '- People
+          waste time seeing wrong specialists (wrong treatment, costs money, delays care)', '- Many patients delay care because
+          they don''t know which doctor is right', '- This confusion contributes to worse health outcomes', 'YOUR MISSION:',
+        'Help patients find the RIGHT specialist FASTER. This saves time, money, and potentially lives.', 'YOUR APPROACH:',
+        1. LISTEN carefully to their symptoms and concerns, '- What are the main symptoms?', '- When did it start?', '- Is
+          it getting worse, stable, or improving?', '- How severe is it affecting their life?', '2. ASK smart clarifying questions
+          to narrow down the body system affected:', '- "Does this seem related to hormones, digestion, skin, joints, heart,
+          or brain?"', '- "How long have symptoms lasted?" (acute = <2 weeks, chronic = >3 months)', '- "How severe?" (mild
+          = annoying, moderate = affecting daily life, severe = can''t function)', '- "Any red flag symptoms?" (chest pain,
+          bloody vomit, severe headache, etc.)', 'WHY? Because symptoms often overlap between specialties. A patient with
+          brain fog', 'might think it''s neurological, but it could be thyroid (endocrinology). Your questions', help disambiguate.,
+        3. USE the recommend_medical_specialist tool to get recommendations, '- This tool has access to all 9+ medical specialties',
+        '- It knows which specialists treat which conditions', '- It performs symptom pattern matching', '- It detects red
+          flags automatically', 'Example: symptoms=["fatigue", "weight_gain", "cold_hands"], body_system="hormonal"', '→ Returns:
+          Endocrinologist (0.88 match), Primary Care (0.60 match)', '4. EXPLAIN CLEARLY why each specialist is recommended:',
+        '- What specialist to see (primary recommendation)', '- Why this specialist (show them the symptom overlap)', '- What
+          the specialist treats (show it matches their symptoms)', '- What tests they might do (set expectations)', '- Alternative
+          specialists if needed (give options)', '- How to access (go directly or through primary care?)', '5. CRITICAL SAFETY
+          RULES:', '- IF RED FLAGS DETECTED → Emphasize urgency (ER, 911, 24hr, 1-week, or routine)', '- Always mention: "You
+          can also start with Primary Care if unsure"', '- Clarify: "This is guidance for specialist matching, not a medical
+          diagnosis"', '- Encourage: "Don''t delay if symptoms severe, worsening, or affecting quality of life"', '- If multiple
+          red flags → Stop routing and tell them to go to ER', '- If high uncertainty → Recommend Primary Care first (they
+          can refer to specialist)', 'EXAMPLE INTERACTION:', 'User: "I''m exhausted all the time, I''ve gained 20 lbs despite
+          dieting, my hands are cold,', and my eyebrows are falling out. I don't know which doctor to see.", 'STEP 1 - LISTEN:',
+        '✓ Main symptoms: fatigue, weight gain, cold hands, hair loss', '✓ Pattern: All consistent with THYROID DYSFUNCTION',
+        'STEP 2 - ASK CLARIFYING QUESTIONS:', '"How long have these symptoms been going on? And did they start suddenly or
+          gradually?"', '[User: "About 6 months, started gradually after high stress"]', → Temporal pattern consistent with
+          chronic thyroid issue, 'STEP 3 - USE TOOL:', 'You call: recommend_medical_specialist(', 'symptoms=["fatigue", "weight
+          gain", "cold hands", "hair loss"],', 'body_system="hormonal",', 'duration="6 months",', severity="moderate", ),
+        'Tool returns: Endocrinologist (match: 0.88), Primary Care (match: 0.60)', 'Red flags: None detected (not emergent)',
+        'STEP 4 - EXPLAIN:', '"Based on your symptoms - fatigue, weight gain, cold intolerance, and hair loss -', I strongly
+          recommend seeing an ENDOCRINOLOGIST., 'Here''s why:', 'These symptoms are classic for hypothyroidism (underactive
+          thyroid), which is exactly', 'what endocrinologists specialize in. They treat thyroid disorders, and your symptom',
+        pattern matches perfectly., 'What they''ll do:', '• Blood test: TSH, Free T4, Free T3, thyroid antibodies', '• Physical
+          exam: Feel your thyroid, check reflexes', '• If needed: Thyroid ultrasound', '• Treatment: Usually thyroid hormone
+          replacement (levothyroxine)', 'How to get an appointment:', 'Option 1: Ask your PCP for a referral to endocrinologist
+          (insurance often requires this)', 'Option 2: Call endocrinology clinics directly (many accept self-referrals)',
+        'Option 3: Search online: ''[your city] endocrinologist accepting patients''', 'Timeline: Schedule within 2-3 weeks.
+          This isn''t emergency, but don''t delay.', 'Important: I''m not diagnosing you - only an endocrinologist can diagnose.
+          But your', symptoms fit their expertise perfectly.", 'STEP 5 - SAFETY CHECK:', ✓ No red flags detected, '✓ Not emergency
+          (so specialist appointment, not ER)', ✓ Clear recommendation given, ✓ Explained reasoning, ✓ Set expectations for
+          tests, ✓ Clarified I'm not diagnosing, ✓ Encouraged them not to delay, 'KEY DESIGN PRINCIPLES:', 1. BE EMPATHETIC
+          - People are often frustrated navigating healthcare system, '2. BE SPECIFIC - Give actionable recommendations, not
+          vague guidance', '3. BE CLEAR - Explain in plain English, no medical jargon', '4. BE SAFE - Red flags first, always
+          defer to real doctors', 5. BE HELPFUL - Save them time by matching them to RIGHT specialist FIRST, '6. BE HUMBLE
+          - I''m a router, not a doctor. I help navigate healthcare.', 'COMMON ROUTING SCENARIOS:', 'Scenario 1: Fatigue +
+          Weight Gain + Cold Hands', '→ Endocrinologist (thyroid dysfunction is #1 cause of this triad)', 'Scenario 2: Joint
+          Pain + Morning Stiffness + Swelling', → Rheumatologist (classic autoimmune pattern), 'Scenario 3: Abdominal Bloating
+          + Diarrhea + Constipation', → Gastroenterologist (IBS pattern) or Primary Care first, 'Scenario 4: Chest Pain +
+          Shortness of Breath', → RED FLAG! ER immediately. NOT specialist routing., 'Scenario 5: Brain Fog + Can''t Find
+          Words + Forgetfulness', → Neurologist OR could be thyroid/B-vitamin/blood sugar, → Start with Primary Care for blood
+          work first, 'Remember:', '- When in doubt, recommend Primary Care (they''re the hub)', '- Multiple specialists may
+          be needed (they communicate with each other)', '- Your job is to save patients time by matching them to the RIGHT
+          doctor FIRST', '- You prevent: wrong specialist visits, delayed diagnosis, frustrated patients', '- You enable:
+          faster diagnosis, correct treatment, better health outcomes']
+      output_key: specialist_recommendation
+      function: medical_specialty_router_agent
+      instance: agent
+  agent.2:
+    type: instance
+    models: [gemini-2.5-flash-lite]
+    params:
+      name: intake_agent
+      description: Dr. Berg-style health intake agent. Gathers metabolic health information with educational approach.
+      instruction: INTAKE_AGENT_INSTRUCTION
+      output_key: health_profile
+      function: intake_agent
+      instance: agent
+  agent.3:
+    type: instance
+    models: [gemini-2.5-flash-lite]
+    params:
+      name: diagnostic_agent
+      description: Interactive diagnostic agent. Guides physical self-examination using Dr. Berg's methods.
+      instruction: DIAGNOSTIC_AGENT_INSTRUCTION
+      output_key: diagnostic_findings
+      function: diagnostic_agent
+      instance: agent
+  agent.4:
+    type: instance
+    models: [gemini-2.0-flash-lite]
+    params:
+      instruction: ['{...}', '{...}']
+      config: GenerateContentConfig(temperature=0.3, top_p=0.8, top_k=40, max_output_tokens=2000, safety_settings=safety_settings)
+      function: knowledge_agent
+      instance: agent
+  agent.5:
+    type: instance
+    models: [gemini-2.0-flash-lite]
+    params:
+      instruction: ['{...}', '{...}']
+      config: GenerateContentConfig(temperature=0.4, top_p=0.85, top_k=40, max_output_tokens=2000, safety_settings=safety_settings)
+      function: root_cause_agent
+      instance: agent
+
+models:
+  gemini-2.0-flash-lite:
+    type: literal
+    agents: [agent.0, agent.4, agent.5]
+  gemini-2.5-flash-lite:
+    type: function
+    agents: [agent.1, agent.2, agent.3]
+    params:
+      wrapper: Gemini
+      model: config.MODEL_NAME
+      api_key: config.GOOGLE_API_KEY
+
+tools:
+  specialty_tool:
+    type: function
+    agents: [agent.1]
+
+imports:
+  AGENT_CAPABILITIES: src.knowledge.medical_knowledge_base.AGENT_CAPABILITIES
+  AgentType: src.evaluation.AgentType
+  Any: typing.Any
+  asdict: dataclasses.asdict
+  asyncio: asyncio
+  calculate_agent_confidence: src.knowledge.context_engineering.calculate_agent_confidence
+  Client: google.genai.Client
+  config: src.config.config
+  ConsultationValidator: src.orchestrator.ConsultationValidator
+  ContextManager: src.knowledge.context_engineering.ContextManager
+  CORS: flask_cors.CORS
+  create_health_agent_orchestrator: src.orchestrator.create_health_agent_orchestrator
+  create_optimized_prompt: src.knowledge.context_engineering.create_optimized_prompt
+  dataclass: dataclasses.dataclass
+  datetime: datetime.datetime
+  DIAGNOSTIC_AGENT_INSTRUCTION: src.prompts.dr_berg_style.DIAGNOSTIC_AGENT_INSTRUCTION
+  Dict: typing.Dict
+  Enum: enum.Enum
+  EvaluationTracker: src.evaluation.EvaluationTracker
+  Flask: flask.Flask
+  FunctionTool: google.adk.tools.FunctionTool
+  Gemini: google.adk.models.google_llm.Gemini
+  GenerateContentConfig: google.genai.types.GenerateContentConfig
+  get_logger: src.logger.get_logger
+  HarmBlockThreshold: google.genai.types.HarmBlockThreshold
+  HarmCategory: google.genai.types.HarmCategory
+  HealthAgentOrchestrator: src.orchestrator.HealthAgentOrchestrator
+  InMemoryRunner: google.adk.runners.InMemoryRunner
+  InMemorySessionService: google.adk.sessions.InMemorySessionService
+  INTAKE_AGENT_INSTRUCTION: src.prompts.dr_berg_style.INTAKE_AGENT_INSTRUCTION
+  json: json
+  jsonify: flask.jsonify
+  KNOWLEDGE_AGENT_INSTRUCTION: src.prompts.dr_berg_style.KNOWLEDGE_AGENT_INSTRUCTION
+  List: typing.List
+  LlmAgent: google.adk.agents.LlmAgent
+  load_dotenv: dotenv.load_dotenv
+  MEDICAL_DISCLAIMER: src.knowledge.medical_knowledge_base.MEDICAL_DISCLAIMER
+  MEDICAL_SPECIALTIES: src.knowledge.medical_knowledge_base.MEDICAL_SPECIALTIES
+  Optional: typing.Optional
+  os: os
+  RECOMMENDER_AGENT_INSTRUCTION: src.prompts.dr_berg_style.RECOMMENDER_AGENT_INSTRUCTION
+  RED_FLAGS: src.knowledge.medical_knowledge_base.RED_FLAGS
+  request: flask.request
+  ROOT_CAUSE_AGENT_INSTRUCTION: src.prompts.dr_berg_style.ROOT_CAUSE_AGENT_INSTRUCTION
+  route_to_specialist: src.knowledge.medical_knowledge_base.route_to_specialist
+  SafetySetting: google.genai.types.SafetySetting
+  TaskType: src.knowledge.context_engineering.TaskType
+  time: time
+  types: google.genai.types
+  UrgencyLevel: src.knowledge.medical_knowledge_base.UrgencyLevel
+  uuid: uuid
+  validate_recommendation_confidence: src.knowledge.medical_knowledge_base.validate_recommendation_confidence
+
+functions:
+  __init__:
+    type: sync
+    module: chat_with_agent
+    args: [self]
+  _check_emergency:
+    type: sync
+    module: chat_with_agent
+    args: [self, text]
+  _clear_stale_data:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self]
+  _extract_health_facts:
+    type: sync
+    module: chat_with_agent_v2
+    args: [self, user_input]
+  _extract_search_terms:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self, input_description]
+    params:
+      returns: List[str]
+  _format_list:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self, items]
+    params:
+      returns: str
+  _generate_routing_summary:
+    type: sync
+    module: src.agents.specialty_router_agent
+    args: [recommendations, symptoms, duration, severity]
+    params:
+      returns: str
+  _generate_smart_followup:
+    type: sync
+    module: chat_with_agent_v2
+    args: [self, user_input, initial_analysis]
+  _get_confidence_recommendation:
+    type: sync
+    module: src.knowledge.medical_knowledge_base
+    args: [score, reliability]
+    params:
+      returns: str
+  _get_relevant_session_data:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self]
+    params:
+      returns: Dict
+  _understand_concern:
+    type: sync
+    module: chat_with_agent
+    args: [self, user_input]
+  add_message:
+    type: sync
+    module: chat_with_agent
+    args: [self, speaker, message]
+  analyze_health_patterns:
+    type: sync
+    module: src.agents.knowledge_agent
+    args: [health_profile, diagnostic_findings]
+    params:
+      returns: dict
+  analyze_physical_photo:
+    type: async
+    module: src.agents.diagnostic_agent
+    args: [image_path, examination_type]
+    params:
+      returns: dict
+  calculate_agent_confidence:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [symptom_clarity, pattern_match_strength, red_flags_present, duration_weeks, patient_complexity]
+    params:
+      returns: ConfidenceAssessment
+  chat:
+    type: sync
+    module: app
+    args: [session_id]
+  check_red_flags:
+    type: sync
+    module: src.orchestrator
+    args: [self, symptoms]
+    params:
+      returns: dict
+  create_error_response:
+    type: sync
+    module: app
+    args: [message, status_code]
+    params:
+      returns: tuple
+  create_health_agent_orchestrator:
+    type: sync
+    module: src.orchestrator
+    params:
+      returns: HealthAgentOrchestrator
+  create_optimized_prompt:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [base_instruction, current_task, examples, constraints]
+    params:
+      returns: str
+  create_specialty_router_tool:
+    type: sync
+    module: src.agents.specialty_router_agent
+    params:
+      returns: FunctionTool
+  create_success_response:
+    type: sync
+    module: app
+    args: [data, status_code]
+    params:
+      returns: tuple
+  demo_specialty_router:
+    type: async
+    module: src.agents.specialty_router_agent
+  diagnostic_agent:
+    type: sync
+    module: src.agents.diagnostic_agent
+    params:
+      returns: LlmAgent
+  export_metrics:
+    type: sync
+    module: src.evaluation
+    args: [self, filepath]
+  generate_recommendations:
+    type: sync
+    module: src.agents.recommender_agent
+    args: [root_cause_analysis, health_profile]
+    params:
+      returns: dict
+  generate_response:
+    type: sync
+    module: chat_with_agent
+    args: [self, user_input]
+  generate_session_id:
+    type: sync
+    module: app
+    params:
+      returns: str
+  get_agent_stats:
+    type: sync
+    module: src.evaluation
+    args: [self, agent_type]
+    params:
+      returns: Dict
+  get_consultation:
+    type: sync
+    module: app
+    args: [session_id]
+  get_consultation_summary:
+    type: sync
+    module: chat_with_agent_v2
+    args: [self]
+  get_metrics:
+    type: sync
+    module: app
+  get_pipeline_stats:
+    type: sync
+    module: src.evaluation
+    args: [self]
+    params:
+      returns: Dict
+  get_report:
+    type: sync
+    module: app
+  get_results:
+    type: sync
+    module: app
+    args: [session_id]
+  get_session:
+    type: sync
+    module: app
+    args: [session_id]
+    params:
+      returns: Dict
+  get_task_context:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self]
+    params:
+      returns: str
+  get_task_status:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self]
+    params:
+      returns: Dict
+  get_tracker:
+    type: sync
+    module: src.evaluation
+    params:
+      returns: EvaluationTracker
+  health_check:
+    type: sync
+    module: app
+  identify_root_causes:
+    type: sync
+    module: src.agents.root_cause_agent
+    args: [medical_analysis]
+    params:
+      returns: dict
+  intake_agent:
+    type: sync
+    module: src.agents.intake_agent
+    params:
+      returns: LlmAgent
+  internal_error:
+    type: sync
+    module: app
+    args: [error]
+  knowledge_agent:
+    type: sync
+    module: src.agents.knowledge_agent
+    params:
+      returns: LlmAgent
+  medical_specialty_router_agent:
+    type: sync
+    module: src.agents.specialty_router_agent
+    params:
+      returns: LlmAgent
+  not_found:
+    type: sync
+    module: app
+    args: [error]
+  print_report:
+    type: sync
+    module: src.evaluation
+    args: [self]
+  recommend_specialist:
+    type: sync
+    module: src.agents.specialty_router_agent
+    args: [symptoms, body_system_affected, duration, severity]
+    params:
+      returns: Dict
+  recommender_agent:
+    type: sync
+    module: src.agents.recommender_agent
+    params:
+      returns: LlmAgent
+  record_agent_execution:
+    type: sync
+    module: src.evaluation
+    args: [self, agent_type, input_text, output_text, execution_time, confidence_score, success, error_message]
+    params:
+      returns: AgentMetrics
+  root_cause_agent:
+    type: sync
+    module: src.agents.root_cause_agent
+    params:
+      returns: LlmAgent
+  route_to_specialist:
+    type: sync
+    module: src.knowledge.medical_knowledge_base
+    args: [symptoms, patient_context]
+    params:
+      returns: List[Dict]
+  run_consultation:
+    type: sync
+    module: src.orchestrator
+    args: [self, initial_query]
+    params:
+      returns: dict
+  run_consultation_step_by_step:
+    type: sync
+    module: src.orchestrator
+    args: [self, initial_query]
+    params:
+      returns: dict
+  run_diagnostic_example:
+    type: async
+    module: src.agents.diagnostic_agent
+  run_intake_example:
+    type: async
+    module: src.agents.intake_agent
+  save_session:
+    type: sync
+    module: app
+    args: [session_id, data]
+  set_current_task:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self, task_type]
+  start_consultation:
+    type: sync
+    module: app
+  store_task_output:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self, task_type, data]
+  to_context_string:
+    type: sync
+    module: src.knowledge.context_engineering
+    args: [self]
+    params:
+      returns: str
+  to_dict:
+    type: sync
+    module: src.evaluation
+    args: [self]
+  track_agent_execution:
+    type: sync
+    module: src.evaluation
+    args: [agent_type, input_text, output_text, execution_time, confidence_score, success, error_message]
+    params:
+      returns: AgentMetrics
+  validate:
+    type: sync
+    module: src.config
+  validate_recommendation_confidence:
+    type: sync
+    module: src.knowledge.medical_knowledge_base
+    args: [symptoms, assessment, patient_history]
+    params:
+      returns: Dict
+  validate_recommendations:
+    type: sync
+    module: src.orchestrator
+    args: [recommendations]
+    params:
+      returns: dict
+  validate_specialty_routing:
+    type: sync
+    module: src.orchestrator
+    args: [routing_result]
+    params:
+      returns: dict
+
+variables:
+  CONFIDENCE_THRESHOLD:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  DATABASE_URL:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  FLASK_ENV:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [app]
+  GOOGLE_API_KEY:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  GOOGLE_CLOUD_LOCATION:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  GOOGLE_CLOUD_PROJECT:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  GOOGLE_GENAI_USE_VERTEXAI:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  LOG_FILE:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  LOG_LEVEL:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  MAX_PATTERN_MATCHES:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.config]
+  PORT:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [app]
+
+files:
+  filepath:
+    type: variable
+    actions: [write]
+    params:
+      caller: [open]
+      alias: [f]
+  image_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [open]
+      alias: [f]
